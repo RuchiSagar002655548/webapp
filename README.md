@@ -1,5 +1,5 @@
 # Webapp Introduction
-Creating a api request using Nodejs and MYSQL2 and checking it in POSTMAN..
+Creating a api request using Nodejs and MariaDB and checking it in POSTMAN..
 
 
 Prerequisites
