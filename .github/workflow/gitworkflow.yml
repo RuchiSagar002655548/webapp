@@ -1,0 +1,50 @@
+name: webapp
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+
+jobs:
+  setup-nodejs:
+    if: github.event.pull_request.head.repo.fork
+    name: setup-nodejs
+    runs-on: ubuntu-latest
+    env:
+      SERV_ADDR: "localhost"
+      PORT: 8080
+      MARIADB_CONNECTION_STRING: "mariadb://root:Root123#@localhost:3307/assign3_db"
+      DB_NAME: "assignments_submission"
+      USER_DATA_FILE_PATH: "./opt/users.csv"
+      MIGRATION_FILE_PATH: "file://./migrations/"
+
+    services:
+      mariadb:
+        image: mariadb:latest
+        env:
+          MARIADB_ROOT_PASSWORD: "mysecretpassword"
+          MARIADB_DATABASE: "assignments_submission"
+        ports:
+          - 3307:3307
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Use Node.js 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Run tests
+        run: npm test
