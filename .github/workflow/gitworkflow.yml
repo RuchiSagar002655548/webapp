@@ -14,18 +14,18 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SERV_ADDR: "localhost"
-      PORT: 8080
+      PORT: 3000
       MARIADB_CONNECTION_STRING: "mariadb://root:Root123#@localhost:3307/assign3_db"
-      DB_NAME: "assignments_submission"
+      DB_NAME: "assign_db"
       USER_DATA_FILE_PATH: "./opt/users.csv"
-      MIGRATION_FILE_PATH: "file://./migrations/"
+ 
 
     services:
       mariadb:
         image: mariadb:latest
         env:
-          MARIADB_ROOT_PASSWORD: "mysecretpassword"
-          MARIADB_DATABASE: "assignments_submission"
+          MARIADB_ROOT_PASSWORD: "Root123#"
+          MARIADB_DATABASE: "assign3_db"
         ports:
           - 3307:3307
         options: >-
@@ -38,10 +38,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       
-      - name: Use Node.js 16
+      - name: Use Node.js 19
         uses: actions/setup-node@v3
         with:
-          node-version: '16'
+          node-version: '19'
       
       - name: Install dependencies
         run: npm install
