@@ -1,10 +1,9 @@
 # Webapp Introduction
-Creating a api request using Nodejs and MariaDB and checking it in POSTMAN..
 
+Creating a api request using Nodejs and MariaDB and checking it in POSTMAN..
 
 Prerequisites
 1.Visual studio code (IDE) 2.POSTMAN 3.Database - Maria.DB 4.Node.js
-
 
 Dependencies to be installed
 npm i
@@ -15,7 +14,6 @@ npm start: starts the development server
 jest test: runs test suite
 Endpoints
 The following endpoints are available for operations:
-
 
 authenticated: Operations available only to authenticated users
 
@@ -33,7 +31,6 @@ Publc: Operations available to all users without authentication
 
 GET - http://localhost:3000/healthz
 
-
 Responds with following HTTP messages
 "200 OK - The request was successful."
 
@@ -47,10 +44,9 @@ Responds with following HTTP messages
 
 "403 Forbidden - The client does not have access to the requested resource."
 
-"404	- Not Found"
+"404 - Not Found"
 
 "500 Internal Server Error - The server encountered an issue it couldn't handle."
-
 
 Instructions:
 
@@ -66,3 +62,4 @@ Test the api with the above HTTPs status code.
 
 Please create a pull request with a detailed description of changes.
 
+Database: Maria.DB
