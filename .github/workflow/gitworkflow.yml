@@ -18,7 +18,6 @@ jobs:
       MARIADB_CONNECTION_STRING: "mariadb://root:Root123#@localhost:3307/assign3_db"
       DB_NAME: "assign_db"
       USER_DATA_FILE_PATH: "./opt/users.csv"
- 
 
     services:
       mariadb:
@@ -37,14 +36,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      
+
       - name: Use Node.js 19
         uses: actions/setup-node@v3
         with:
-          node-version: '19'
-      
+          node-version: "19"
+
       - name: Install dependencies
         run: npm install
-      
-      - name: Run tests
+
+      - name: Run Jest tests
         run: npm test
