@@ -1,4 +1,8 @@
 # Webapp Introduction
+<<<<<<< HEAD
+=======
+Creating a api request using Nodejs and MariaDB and checking it in POSTMAN..
+>>>>>>> 133ac847ca091d3df3d0ff9ff772c65aeb266f8f
 
 Creating a api request using Nodejs and MariaDB and checking it in POSTMAN..
 
