@@ -1,7 +1,7 @@
-name: gitworkflow
+name: webapp
 
 on:
-  pull:
+  pull_request:
     branches:
       - main
     types:
@@ -13,18 +13,17 @@ jobs:
     name: setup-nodejs
     runs-on: ubuntu-latest
     env:
-      SERV_ADDR: "localhost"
+      DBHOST: "localhost"
       PORT: 3000
-      MARIADB_CONNECTION_STRING: "mariadb://root:Root123#@localhost:3307/assign3_db"
-      DB_NAME: "assign_db"
-      USER_DATA_FILE_PATH: "./opt/users.csv"
+      DATABASE: "assign3_db"
+      CSV_FILE_PATH: "./opt/users.csv"
 
     services:
       mariadb:
         image: mariadb:latest
         env:
-          MARIADB_ROOT_PASSWORD: "Root123#"
-          MARIADB_DATABASE: "assign3_db"
+          DBPASS: "Root123#"
+          DATABASE: "assign3_db"
         ports:
           - 3307:3307
         options: >-
@@ -45,5 +44,5 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run Jest tests
+      - name: Run tests
         run: npm test
