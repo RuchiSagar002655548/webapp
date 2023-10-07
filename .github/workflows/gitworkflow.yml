@@ -15,7 +15,7 @@ jobs:
     env:
       SERV_ADDR: "localhost"
       PORT: 3000
-      DATABASE: "assign_db"
+      DATABASE: "assign3_db"
       CSV_FILE_PATH: "./opt/users.csv"
 
     services:
