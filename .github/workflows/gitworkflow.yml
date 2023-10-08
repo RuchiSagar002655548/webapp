@@ -1,32 +1,31 @@
-name: gitworkflow
+name: workflow
 
 on:
-  pull:
+  pull_request:
     branches:
       - main
     types:
       - opened
 
 jobs:
-  setup-nodejs:
-    if: github.event.pull_request.head.repo.fork
-    name: setup-nodejs
+  integration-test:
     runs-on: ubuntu-latest
     env:
-      SERV_ADDR: "localhost"
+      DBHOST: "localhost"
       PORT: 3000
-      MARIADB_CONNECTION_STRING: "mariadb://root:Root123#@localhost:3307/assign3_db"
-      DB_NAME: "assign_db"
-      USER_DATA_FILE_PATH: "./opt/users.csv"
+      DBUSER: "root"
+      DBPASS: "Root123#"
+      DATABASE: "assign3_db"
+      CSV_FILE_PATH: "./opt/users.csv"
 
     services:
       mariadb:
-        image: mariadb:latest
+        image: mariadb:10.5
         env:
-          MARIADB_ROOT_PASSWORD: "Root123#"
-          MARIADB_DATABASE: "assign3_db"
+          MYSQL_ROOT_PASSWORD: "Root123#"
+          MYSQL_DATABASE: "csye_assign3"
         ports:
-          - 3307:3307
+          - 3306:3306 # Corrected the port
         options: >-
           --health-cmd="mysqladmin ping"
           --health-interval 10s
@@ -35,10 +34,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2 # Corrected the version
 
       - name: Use Node.js 19
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v2 # Corrected the version
         with:
           node-version: "19"
 
