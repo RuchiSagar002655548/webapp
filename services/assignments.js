@@ -3,21 +3,19 @@ const db = require('../config/dbSetup');
 
 const createNewAssignment = async (req, res) => { // Create new Assignment function
 
-
     
-        const userId = req.user && req.user.id;  // Extract user ID from the token
-        if (!userId) {
-            return res.status(401).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: 'Unauthorized' });
-        }
 
-      if(!req.body.name || 
+    if(!req.body.name || 
         !req.body.points || 
         !req.body.num_of_attempts || 
         !req.body.deadline ||
         (req.body.points && (req.body.points < 1 || typeof req.body.points=== 'string' || req.body.points > 100)) ||
-        (req.body.num_of_attempts && (req.body.num_of_attempts < 1 || typeof req.body.num_of_attempts=== 'string' || req.body.num_of_attempts > 100))) {
+        (req.body.num_of_attempts && (req.body.num_of_attempts < 1 || typeof req.body.num_of_attempts=== 'string' || req.body.num_of_attempts > 100) ||
+        (typeof req.body.name === 'number' || !isNaN(parseFloat(req.body.name)) && isFinite(req.body.name))
+        || (typeof req.body.name === 'string' && req.body.name.trim() === '') || Object.keys(req.body).length > 4))
+         {
             return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({
-                message: "Bad request.."
+                message: "Bad request"
             });
         } 
         
@@ -29,10 +27,10 @@ const createNewAssignment = async (req, res) => { // Create new Assignment funct
                 message: "Bad request! Assignment already exists."
             });
         }
-        
-        const user = await db.user.findByPk(userId);
-        if (!user) {
-            return res.status(404).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: 'User not found' });}
+
+        let {eMail, pass} = helper.getDecryptedCreds(req.headers.authorization);
+        let user = await db.user.findOne({where:{email:eMail}});
+       
     
         let data = await user.createAssignment({
             name:req.body.name,
@@ -60,40 +58,47 @@ const createNewAssignment = async (req, res) => { // Create new Assignment funct
     }
 }
 
-const putAssignmentDetails = async (req, res) => {  // Create new product function
+const putAssignmentDetails = async (req, res) => {  
 
     
-    const userId = req.user && req.user.id;
+    const userId = req.user.id;
     if (!userId) {
         return res.status(401).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: 'Unauthorized' });
     }
-
+    
     if (Object.keys(req.body).length === 0) {
         // Send 204 status if the body is empty
         return res.status(204).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
       }
-
     if(!req.body.name || 
         !req.body.points || 
         !req.body.num_of_attempts || 
         !req.body.deadline ||
         (req.body.points && (req.body.points < 1 || typeof req.body.points=== 'string' || req.body.points > 100)) ||
         (req.body.num_of_attempts && (req.body.num_of_attempts < 1 || typeof req.body.num_of_attempts=== 'string' || req.body.num_of_attempts > 100)) || 
+        (typeof req.body.name === 'number' || !isNaN(parseFloat(req.body.name)) && isFinite(req.body.name))||
+        (typeof req.body.name === 'string' && req.body.name.trim() === '')  ||
         Object.keys(req.body).length > 4) {
             return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({
                 message: "Bad request.."
             });
         }  
-
+    
+        let assignId = req.params.id;
         
-    const assignmentId = req.params.id;  // Extract assignment ID from the request parameters
+      // Extract assignment ID from the request parameters
 
     try {
-        const assignment = await db.assignment.findOne({ where: { id: assignmentId } });
+        const assignment = await db.assignment.findByPk(assignId); 
 
         // Check if the assignment exists
         if (!assignment) {
             return res.status(404).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: "Assignment not found" });
+        }
+
+        const userId = req.user && req.user.id;
+        if (!userId) {
+        return res.status(401).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: 'Unauthorized' });
         }
 
         //Check if the user has permission to update the assignment (depends on your use case)
@@ -109,7 +114,7 @@ const putAssignmentDetails = async (req, res) => {  // Create new product functi
             deadline: req.body.deadline
         }, {
             where: {
-                id: assignmentId
+                id: assignId
             }
         });
 
@@ -119,28 +124,27 @@ const putAssignmentDetails = async (req, res) => {  // Create new product functi
         console.error("Database error: ", err);
         return res.status(500).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: "Internal server error" });  // Use 500 for server errors, not 400
     }}
-    
+   
 
 const deleteAssignment = async (req, res) => {
 
      // Ensuring the user is authenticated should be handled in a middleware.
     // So, make sure the user is authenticated and authorized to delete the assignment.
-    const userId = req.user && req.user.id; 
-
+    const userId = req.user && req.user.id;  
     if (!userId) {
         return res.status(401).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: 'Unauthorized' });
     }
-     
 
-    if (req._body) {  // You may also check Object.keys(req.body).length > 0 depending on your express configuration
+
+    if (req._body) {  
         return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').send("Bad Request");
     }
 
-    const assignmentId = req.params.id;  // Extract assignment ID from the request parameters
+    const assignId = req.params.id;  // Extract assignment ID from the request parameters
 
     try {
         // First, check if the assignment exists
-        const assignment = await db.assignment.findOne({ where: { id: assignmentId } });
+        const assignment = await db.assignment.findByPk(assignId);
 
         if (!assignment) {
             return res.status(404).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: "Assignment not found" });
@@ -153,7 +157,7 @@ const deleteAssignment = async (req, res) => {
 
         await db.assignment.destroy({
             where: {
-                id: assignmentId
+                id: assignId
 
             }
         });
@@ -164,7 +168,7 @@ const deleteAssignment = async (req, res) => {
         console.error("Database error: ", err);
         return res.status(500).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: "Internal server error" }); // Use 500 for server errors
     }
-    
+   
 }
 
 const getAssignmentList = async(req, res) => {
@@ -181,6 +185,7 @@ const getAssignmentList = async(req, res) => {
             return res.status(404).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: 'No assignments found' });
         }
 
+
         // Mapping through assignments to format the response
         const result = assignments.map(assignment => ({
             id: assignment.id,
@@ -192,7 +197,7 @@ const getAssignmentList = async(req, res) => {
             assignment_updated: assignment.assignment_updated
            
         }));
-        return res.status(200).json(result); 
+        return res.status(200).set('Cache-Control', 'no-store, no-cache, must-revalidate').json(result); 
     }catch(err) {
         res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').send("Bad Request");
         console.log("DB Error ", err);
@@ -213,11 +218,11 @@ const getAssignmentDetails = async(req, res) => {
             return res.status(401).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: 'Unauthorized' });
         }
 
-        let assignmentId = req.params.id;  // Extract assignment ID from the request parameters
+        let assignId = req.params.id;  // Extract assignment ID from the request parameters
 
-        const assignment = await db.assignment.findOne({
-            where: { id: assignmentId}  // Added userId to the where clause for extra security
-        });
+        const assignment = await db.assignment.findByPk(assignId); //findOne({where: { id: assigntId}}); 
+             // Added userId to the where clause for extra security
+        
 
         if (!assignment) {
             return res.status(404).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: "Assignment not found" });
@@ -241,7 +246,6 @@ const getAssignmentDetails = async(req, res) => {
 }
     
     
-   
 
 module.exports = {
     createNewAssignment,
