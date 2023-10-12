@@ -23,7 +23,7 @@ const sequelize = new Sequelize(
 let db = {};
 
 db.sequelize = sequelize;
-//dbase.Sequelize = Sequelize;
+
 
 db.user = createUserModel(sequelize);
 db.assignment = createAssignmentModel(sequelize);

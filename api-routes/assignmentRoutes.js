@@ -32,5 +32,4 @@ router.patch('/:id', (req, res) => {
     res.status(405).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
 });
 
-
 module.exports = router;

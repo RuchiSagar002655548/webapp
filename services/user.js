@@ -24,6 +24,7 @@ const newUser = async (req, res) => {
 
                 // Validate user data
                 if (!first_name || !last_name || !email || !password ) {
+                    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
                     return res.status(400).json({
                         message: "Bad request"
                     });
@@ -59,12 +60,12 @@ const newUser = async (req, res) => {
                     });
                 }
             }
-
+           
             // Send a response when done
-            
             res.status(201).json({
                 message: 'Users added successfully'
             });
+            
         }
     });
 }
