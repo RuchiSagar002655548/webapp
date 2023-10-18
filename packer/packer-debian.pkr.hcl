@@ -97,4 +97,4 @@ build {
     ]
     script = "${var.script_file}"
   }
-}6
+}
