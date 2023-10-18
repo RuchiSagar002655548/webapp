@@ -21,17 +21,13 @@ sudo apt-get install -y mariadb-server
 sudo systemctl start mariadb
 
 
-# Log in to MariaDB to create the user (if not exists), change the password, create a database, set permissions, and use the new database
+# Create the database and user, then grant permissions
 sudo mysql -u root <<EOF
-CREATE USER IF NOT EXISTS 'root'@'127.0.0.1' IDENTIFIED BY '${DBPASS}';
-ALTER USER 'root'@'localhost' IDENTIFIED BY '${DBPASS}';
-ALTER USER 'root'@'127.0.0.1' IDENTIFIED BY '${DBPASS}';
+CREATE USER IF NOT EXISTS '${DBUSER}'@'${DBHOST}' IDENTIFIED BY '${DBPASS}';
+GRANT ALL PRIVILEGES ON . TO '${DBUSER}'@'${DBHOST}' WITH GRANT OPTION;
 CREATE DATABASE IF NOT EXISTS ${DATABASE};
-GRANT ALL PRIVILEGES ON ${DATABASE}.* TO 'root'@'localhost';
-GRANT ALL PRIVILEGES ON ${DATABASE}.* TO 'root'@'127.0.0.1';
+GRANT ALL PRIVILEGES ON ${DATABASE}.* TO '${DBUSER}'@'${DBHOST}';
 FLUSH PRIVILEGES;
-USE ${DATABASE};
-EXIT;
 EOF
 
 #sudo mysqladmin -u ${DBUSER} password ${DBPASS}

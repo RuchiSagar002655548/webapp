@@ -17,6 +17,7 @@ jobs:
       DBUSER: ${{ secrets.DB_USER }} # Using GitHub secrets
       DBPASS: ${{ secrets.DB_PASS }} # Using GitHub secrets
       DATABASE: "assign3_db"
+      DBPORT: 3306
 
     services:
       mariadb:
@@ -47,6 +48,16 @@ jobs:
       - name: Run Jest tests -- --detectOpenHandles
         run: npm test -- --detectOpenHandles
 
+      - name: Create .env file
+        run: |
+          touch .env
+          echo "DBHOST=${{ env.DBHOST }}" >> .env
+          echo "PORT=${{ env.PORT }}" >> .env
+          echo "DBUSER=${{ env.DBUSER }}" >> .env
+          echo "DBPASS=${{ env.DBPASS }}" >> .env
+          echo "DATABASE=${{ env.DATABASE }}" >> .env
+          echo "DBPORT=${{ env.DBPORT }}" >> .env
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -55,7 +66,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Build application artifact
-        run: zip -r webapp.zip ./ -x '.git'
+        run: zip -r webapp.zip .env ./ -x ".git/*"
 
       - name: Packer Init
         run: packer init packer-debian.pkr.hcl || exit 1
