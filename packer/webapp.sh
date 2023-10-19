@@ -21,12 +21,15 @@ sudo apt-get install -y mariadb-server
 sudo systemctl start mariadb
 
 
-# Create the database and user, then grant permissions
+# Log in as superuser
 sudo mysql -u root <<EOF
-CREATE USER IF NOT EXISTS '${DBUSER}'@'${DBHOST}' IDENTIFIED BY '${DBPASS}';
-GRANT ALL PRIVILEGES ON . TO '${DBUSER}'@'${DBHOST}' WITH GRANT OPTION;
-CREATE DATABASE IF NOT EXISTS ${DATABASE};
-GRANT ALL PRIVILEGES ON ${DATABASE}.* TO '${DBUSER}'@'${DBHOST}';
+-- Change the authentication method to mysql_native_password
+ALTER USER 'root'@'localhost' IDENTIFIED WITH 'mysql_native_password' BY '$DBPASS';
+FLUSH PRIVILEGES;
+
+-- Create the database and user
+CREATE DATABASE IF NOT EXISTS $DATABASE;
+GRANT ALL PRIVILEGES ON $DATABASE.* TO '$DBUSER'@'$DBHOST' IDENTIFIED BY '$DBPASS' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 EOF
 
