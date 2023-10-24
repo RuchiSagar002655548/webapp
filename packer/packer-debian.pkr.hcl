@@ -7,6 +7,10 @@ packer {
   }
 }
 
+variable "db_host"{
+   type    = string
+   default = "${env("DB_NAME")}"
+}
 variable "aws_region" {
   type    = string
   default = "us-east-1"
@@ -94,6 +98,7 @@ build {
     environment_vars = [
       "DEBIAN_FRONTEND=noninteractive",
       "CHECKPOINT_DISABLE=1"
+       "DB_NAME=${var.db_name}"
     ]
     script = "${var.script_file}"
   }
