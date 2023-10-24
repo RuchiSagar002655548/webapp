@@ -9,4 +9,4 @@ Restart=always
 User=admin
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=cloud-final.service
