@@ -24,7 +24,7 @@ sudo systemctl start mariadb
 # Log in as superuser
 sudo mysql -u root <<EOF
 -- Change the authentication method to mysql_native_password
-ALTER USER 'root'@'localhost' IDENTIFIED WITH 'mysql_native_password' BY '$DBPASS';
+ALTER USER '$DBUSER'@'$DBHOST' IDENTIFIED WITH 'mysql_native_password' BY '$DBPASS';
 FLUSH PRIVILEGES;
 
 -- Create the database and user
@@ -32,7 +32,7 @@ CREATE DATABASE IF NOT EXISTS $DATABASE;
 GRANT ALL PRIVILEGES ON $DATABASE.* TO '$DBUSER'@'$DBHOST' IDENTIFIED BY '$DBPASS' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 EOF
-
+echo "MySQL setup completed. Database '$DATABASE' and user '$DBUSER' on host '$DBHOST' have been created.
 #sudo mysqladmin -u ${DBUSER} password ${DBPASS}
 #mysqladmin -u ${DBUSER} --password=${DBPASS} --host=${DBHOST} --port=${DBPORT} create ${DATABASE}
 sudo systemctl enable mariadb
