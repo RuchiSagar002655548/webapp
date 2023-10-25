@@ -7,9 +7,9 @@ packer {
   }
 }
 
-variable "db_host"{
-   type    = string
-   default = "${env("DB_NAME")}"
+variable "db_host" {
+  type    = string
+  default = "${env("DB_NAME")}"
 }
 variable "aws_region" {
   type    = string
