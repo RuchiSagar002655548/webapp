@@ -14,7 +14,7 @@ sudo apt-get install -y nodejs
 # Install unzip if not installed
 sudo apt-get install unzip -y
 
-# Unzip the web application
+# This will unzip the web application
 unzip webapp.zip -d webapp
 cd webapp
 npm install
