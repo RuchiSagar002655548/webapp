@@ -56,6 +56,11 @@ variable "script_file" {
   default = "webapp.sh"
 }
 
+variable "profile" {
+  type    = string
+  default = "dev"
+}
+
 source "amazon-ebs" "my-ami" {
   region          = "${var.aws_region}"
   ami_name        = "my-debian-ami"
@@ -74,7 +79,7 @@ source "amazon-ebs" "my-ami" {
   instance_type = "t2.micro"
   source_ami    = "${var.source_ami}"
   ssh_username  = "${var.ssh_username}"
-  profile       = "dev"
+  profile       = "${var.profile}"
 
   launch_block_device_mappings {
     delete_on_termination = true
