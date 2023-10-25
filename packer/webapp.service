@@ -1,12 +1,15 @@
 Description=Webapp
 After=network.target cloud-final.service
-Requires=cloud-final.service
 
 [Service]
+Type=Simple
 ExecStart=/usr/bin/npm run start
 WorkingDirectory=/home/admin/webapp
+Environment=PORT=3000
+Environment=CSV_PATH="/home/admin/webapp/users.csv"
 Restart=always
+RestartSec=3
 User=admin
 
 [Install]
-WantedBy=cloud-final.service
+WantedBy=cloud-init.target
