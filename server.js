@@ -3,7 +3,7 @@ var app = express();
 var bodyParser = require("body-parser");
 const methodOverride = require('method-override');
 const { newUser } = require('./services/user');
-const jsonlint = require('jsonlint-mod');
+
 
 app.use(bodyParser.json());
 
