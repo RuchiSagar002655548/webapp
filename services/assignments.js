@@ -1,10 +1,10 @@
 const helper = require('../config/helper');
 const db = require('../config/dbSetup');
+const logger = require('../logger/loggerindex');
 
 const createNewAssignment = async (req, res) => { // Create new Assignment function
 
-    
-
+    helper.statsdClient.increment('POST_assigndetails');
     if(!req.body.name || 
         !req.body.points || 
         !req.body.num_of_attempts || 
@@ -14,18 +14,16 @@ const createNewAssignment = async (req, res) => { // Create new Assignment funct
         (typeof req.body.name === 'number' || !isNaN(parseFloat(req.body.name)) && isFinite(req.body.name))
         || (typeof req.body.name === 'string' && req.body.name.trim() === '') || Object.keys(req.body).length > 4))
          {
-            return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({
-                message: "Bad request"
-            });
+            logger.error({method: "POST", uri: "/v1/assignments", statusCode: 400, message: "Enter Valid Request Body"});
+            return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
         } 
         
 
     try{
         let assignmentObj = await db.assignment.findOne({where:{name:req.body.name}});
         if(assignmentObj) {
-            return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({
-                message: "Bad request! Assignment already exists."
-            });
+            logger.error({method: "POST", uri: "/v1/assignments", statusCode: 400, message: "Assignment already exist"});
+            return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
         }
 
         let {eMail, pass} = helper.getDecryptedCreds(req.headers.authorization);
@@ -51,23 +49,27 @@ const createNewAssignment = async (req, res) => { // Create new Assignment funct
             "assignment_updated": data.dataValues.assignment_updated,
             
         }
+        logger.info({method: "POST", uri: "/v1/assignments", statusCode: 201, message: "Assignment created Successfully!!" });
         return res.status(201).set('Cache-Control', 'no-store, no-cache, must-revalidate').json(result);
     }catch(err) {
-        console.log("DB Error ", err);
-        res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').send("Bad Request!");
+        logger.error({method: "POST", uri: "/v1/assignments", statusCode: 500, message: "Server error" + err });
+        res.status(500).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
     }
 }
 
 const putAssignmentDetails = async (req, res) => {  
 
+    helper.statsdClient.increment('PUT_assigndetails');
     
     const userId = req.user.id;
     if (!userId) {
-        return res.status(401).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: 'Unauthorized' });
+        logger.error({method: "PUT", uri: "/v1/assignments/" + req.params.id, statusCode: 401, message: "Unauthorised user" });
+        return res.status(401).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
     }
     
     if (Object.keys(req.body).length === 0) {
-        // Send 204 status if the body is empty
+        // Send 400 status if the body is empty
+        logger.error({method: "PUT", uri: "/v1/assignments/" + req.params.id, statusCode: 400, message:"Request body is empty"});
         return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
       }
     if(!req.body.name || 
@@ -79,9 +81,8 @@ const putAssignmentDetails = async (req, res) => {
         (typeof req.body.name === 'number' || !isNaN(parseFloat(req.body.name)) && isFinite(req.body.name))||
         (typeof req.body.name === 'string' && req.body.name.trim() === '')  ||
         Object.keys(req.body).length > 4) {
-            return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({
-                message: "Bad request.."
-            });
+            logger.error({method: "PUT", uri: "/v1/assignments/" + req.params.id, statusCode: 400, message:"Enter a valid request body"});
+            return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
         }  
     
         let assignId = req.params.id;
@@ -93,17 +94,20 @@ const putAssignmentDetails = async (req, res) => {
 
         // Check if the assignment exists
         if (!assignment) {
-            return res.status(404).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: "Assignment not found" });
+            logger.error({method: "PUT", uri: "/v1/assignments/" + req.params.id, statusCode: 404, message:"Assignment Already exists"});
+            return res.status(404).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
         }
 
         const userId = req.user && req.user.id;
         if (!userId) {
-        return res.status(401).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: 'Unauthorized' });
+            logger.error({method: "PUT", uri: "/v1/assignments/" + req.params.id, statusCode: 401, message: "Unauthorised user" });
+            return res.status(401).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
         }
 
         //Check if the user has permission to update the assignment (depends on your use case)
          if (assignment.owner_user_id !== userId) {
-            return res.status(403).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: 'Forbidden' });
+            logger.error({method: "PUT", uri: "/v1/assignments/" + req.params.id, statusCode: 403, message: "Invalid, User does not have necessary permissions to Update"});
+            return res.status(403).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
          }
 
         // Update the assignment
@@ -117,27 +121,29 @@ const putAssignmentDetails = async (req, res) => {
                 id: assignId
             }
         });
-
+        logger.info({method: "PUT", uri: "/v1/assignments/" + req.params.id, statusCode: 204, message: "Assignment Updated Successfully!!" });
         return res.status(204).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();  // Return 204 on successful update
 
     } catch (err) {
-        console.error("Database error: ", err);
-        return res.status(500).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: "Internal server error" });  // Use 500 for server errors, not 400
+        logger.error({method: "PUT", uri: "/v1/assignments/" + req.params.id, statusCode: 500, message: "Server error" + err });
+        return res.status(500).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();  // Use 500 for server errors
     }}
    
 
 const deleteAssignment = async (req, res) => {
 
-     // Ensuring the user is authenticated should be handled in a middleware.
+    helper.statsdClient.increment('DELETE_assigndetails');
     // So, make sure the user is authenticated and authorized to delete the assignment.
     const userId = req.user && req.user.id;  
     if (!userId) {
-        return res.status(401).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: 'Unauthorized' });
+        logger.error({method: "DELETE", uri: "/v1/assignments/" + req.params.id, statusCode: 401, message: "Unauthorised user" });
+        return res.status(401).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
     }
 
 
     if (req._body) {  
-        return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').send("Bad Request");
+        logger.error({method: "DELETE", uri: "/v1/assignments/" + req.params.id, statusCode: 400, message:"Request body should be empty"});
+        return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
     }
 
     const assignId = req.params.id;  // Extract assignment ID from the request parameters
@@ -147,12 +153,14 @@ const deleteAssignment = async (req, res) => {
         const assignment = await db.assignment.findByPk(assignId);
 
         if (!assignment) {
-            return res.status(404).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: "Assignment not found" });
+            logger.error({method: "DELETE", uri: "/v1/assignments/" + req.params.id, statusCode: 404, message:"Assignment not found"});
+            return res.status(404).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
         }
 
         // Check if the user has permission to delete the assignment
         if (assignment.owner_user_id !== userId) {
-           return res.status(403).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: 'Forbidden' });
+            logger.error({method: "DELETE", uri: "/v1/assignments/" + req.params.id, statusCode: 403, message: "Invalid, User does not have necessary permissions to Update"});
+            return res.status(403).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
          }
 
         await db.assignment.destroy({
@@ -161,19 +169,22 @@ const deleteAssignment = async (req, res) => {
 
             }
         });
-
-        return res.status(204).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();  // Return 204 No Content on successful deletion
+        logger.info({method: "DELETE", uri: "/v1/assignments/" + req.params.id, statusCode: 204, message: "Assignment Deleted Successfully!!" });
+        return res.status(204).set('Cache-Control', 'no-store, no-cache, must-revalidate').send()  // Return 204 No Content on successful deletion
 
     } catch (err) {
-        console.error("Database error: ", err);
-        return res.status(500).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: "Internal server error" }); // Use 500 for server errors
+        logger.error({method: "DELETE", uri: "/v1/assignments/" + req.params.id, statusCode: 500, message: "Server error" + err });
+        return res.status(500).set('Cache-Control', 'no-store, no-cache, must-revalidate').send(); // Use 500 for server errors
     }
    
 }
 
 const getAssignmentList = async(req, res) => {
 
+    helper.statsdClient.increment('GET_assignlist');
+
     if (req._body) {
+        logger.error({method: "GET", uri: "/v1/assignments", statusCode: 400, message:"Request body should be empty"});
         return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
     }
 
@@ -181,12 +192,14 @@ const getAssignmentList = async(req, res) => {
         // Token validation and user attachment should be done in middleware
         const userId = req.user && req.user.id;  // Extract user ID from the token
         if (!userId) {
-            return res.status(401).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: 'Unauthorized' });
+            logger.error({method: "GET", uri: "/v1/assignments", statusCode: 401, message: "Unauthorised user" });
+            return res.status(401).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
         }
         const assignments = await db.assignment.findAll();  // This fetches all assignments
 
         if (!assignments || assignments.length === 0) {
-            return res.status(404).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: 'No assignments found' });
+            logger.error({method: "GET", uri: "/v1/assignments", statusCode: 404, message:"Assignment not found"});
+            return res.status(404).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
         }
 
 
@@ -201,17 +214,22 @@ const getAssignmentList = async(req, res) => {
             assignment_updated: assignment.assignment_updated
            
         }));
+        logger.info({method: "GET", uri: "/v1/assignments", statusCode: 200, message: "List of all Assignments is displayed successfully!!"});
         return res.status(200).set('Cache-Control', 'no-store, no-cache, must-revalidate').json(result); 
     }catch(err) {
-        res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').send("Bad Request");
-        console.log("DB Error ", err);
+        logger.error({method: "GET", uri: "/v1/assignments", statusCode: 500, message: "Server error" + err });
+        res.status(500).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
+        
     }
 }
 
 const getAssignmentDetails = async(req, res) => {
     
+    
+    helper.statsdClient.increment('GET_assigndetails');
 
     if (req._body) {
+        logger.error({method: "GET", uri: "/v1/assignments/" + req.params.id, statusCode: 400, message:"Request body should be empty"});
         return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
     }
 
@@ -219,17 +237,19 @@ const getAssignmentDetails = async(req, res) => {
         // Token validation and user attachment should be done in middleware
         const userId = req.user && req.user.id;  // Extract user ID from the token
         if (!userId) {
-            return res.status(401).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: 'Unauthorized' });
+            logger.error({method: "GET", uri: "/v1/assignments/" + req.params.id, statusCode: 401, message: "Unauthorised user" });
+            return res.status(401).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
         }
 
         let assignId = req.params.id;  // Extract assignment ID from the request parameters
 
-        const assignment = await db.assignment.findByPk(assignId); //findOne({where: { id: assigntId}}); 
-             // Added userId to the where clause for extra security
+        const assignment = await db.assignment.findByPk(assignId);  
+            
         
 
         if (!assignment) {
-            return res.status(404).set('Cache-Control', 'no-store, no-cache, must-revalidate').json({ message: "Assignment not found" });
+            logger.error({method: "GET", uri: "/v1/assignments/" + req.params.id, statusCode: 404, message:"Assignment not found"});
+            return res.status(404).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
         }
         
         const result = {
@@ -241,11 +261,11 @@ const getAssignmentDetails = async(req, res) => {
             assignment_created: assignment.dataValues.assignment_created,
             assignment_updated: assignment.dataValues.assignment_updated,
         };
-
+        logger.info({method: "GET", uri: "/v1/assignments/" + req.params.id, statusCode: 200, message: "The required assignment is displayed successfully!!"});
         return res.status(200).set('Cache-Control', 'no-store, no-cache, must-revalidate').json(result);
     } catch (err) {
-        console.error("Database error: ", err);
-        return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').send("Bad request !!");
+        logger.error({method: "GET", uri: "/v1/assignments/" + req.params.id, statusCode: 500, message: "Server error" + err });
+        return res.status(500).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
     }
 }
     
@@ -257,5 +277,5 @@ module.exports = {
     getAssignmentList,
     putAssignmentDetails,
     getAssignmentDetails
-    
+    
 }
