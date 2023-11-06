@@ -48,7 +48,7 @@ const pAuthCheck = async (req, res, next) => {
     //Check if user creds match the user at id.
     let dbCheck = await dbAssignVal(eMail, pass,id);
     if(dbCheck) {
-        logger.error('Details of user incorrect- ${dbCheck}');
+        logger.error(`Details of user incorrect- ${dbCheck}`);
         return res.status((dbCheck=='Forbidden')?403:404).json({
           message: dbCheck,
         });
