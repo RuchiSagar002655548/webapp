@@ -14,7 +14,6 @@ const createPassHash = async (pass) => {
 }
 
 
-
 const getDecryptedCreds = (authHeader) => {
   const base64Creds = authHeader.split(" ")[1];
   const credentials = Buffer.from(base64Creds, "base64").toString("ascii");
@@ -26,8 +25,8 @@ const getDecryptedCreds = (authHeader) => {
 const pAuthCheck = async (req, res, next) => {
   //Check if auth header is present and is a basic auth header.
   if (!req.headers.authorization || req.headers.authorization.indexOf("Basic ") === -1) {
-    logger.error("Header Auth missing - Unauthorized")
-    return res.status(401).json({ message: "Unauthorized" });
+    logger.error({statusCode: 401, message:"Header Auth missing - Unauthorized"})
+    return res.status(401).send();
   }
 
   //decode the auth header
@@ -38,10 +37,8 @@ const pAuthCheck = async (req, res, next) => {
   let user = await validUser(eMail, pass);
 
   if (!eMail || !pass || !user) {
-    logger.error("Details of user are not correct - Unauthorized");
-    return res.status(401).json({
-      message: "Unauthorized",
-    });
+    logger.error({statusCode: 401, message:"Details of user are not correct - Unauthorized"});
+    return res.status(401).send();
   } 
 
    // Attach user to req object
