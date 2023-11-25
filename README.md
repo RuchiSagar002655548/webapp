@@ -1,7 +1,6 @@
 # webapp
-Creating a api request using Nodejs and MariaDB and checking it in POSTMAN.
 
-Prerequisites 1.Visual studio code 2.POSTMAN 3.Database - Maria.DB 4.Node.js
+Creating a api request using Nodejs and MariaDB and checking it in POSTMAN.
 
 Dependencies to be installed npm i start app by npm start Important Commands to run the server and test Scripts npm start: starts the development server jest test: runs test suite Endpoints The following endpoints are available for operations:
 
