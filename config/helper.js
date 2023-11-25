@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const db = require('./dbSetup');
 const dotenv = require('dotenv');
 const StatsD = require('node-statsd');
+const logger = require('../logger/loggerindex');
 const statsdClient = new StatsD();
 
 dotenv.config();
@@ -24,7 +25,7 @@ const getDecryptedCreds = (authHeader) => {
 
 const pAuthCheck = async (req, res, next) => {
   //Check if auth header is present and is a basic auth header.
-  if (!req.headers.authorization || req.headers.authorization.indexOf("Basic ") === -1) {
+  if (!req.headers.authorization || req.headers.authorization.indexOf("Basic") === -1) {
     logger.error({statusCode: 401, message:"Header Auth missing - Unauthorized"});
     return res.status(401).send();
   }
@@ -116,5 +117,6 @@ module.exports = {
     validUser,
     getDecryptedCreds,
     pAuthCheck,
-    statsdClient  
+    statsdClient  
 };
+
