@@ -9,9 +9,9 @@ const createNewAssignment = async (req, res) => { // Create new Assignment funct
         !req.body.points || 
         !req.body.num_of_attempts || 
         !req.body.deadline ||
-        (req.body.points && (req.body.points < 1 || typeof req.body.points=== 'string' || req.body.points > 100)) ||
+        (req.body.points && (req.body.points < 1 || typeof req.body.points=== 'string' || req.body.points > 100)) || !Number.isInteger(req.body.points) ||
         (req.body.num_of_attempts && (req.body.num_of_attempts < 1 || typeof req.body.num_of_attempts=== 'string' || req.body.num_of_attempts > 100) ||
-        (typeof req.body.name === 'number' || !isNaN(parseFloat(req.body.name)) && isFinite(req.body.name))
+        !Number.isInteger(req.body.num_of_attempts) || (typeof req.body.name === 'number' || !isNaN(parseFloat(req.body.name)) && isFinite(req.body.name))
         || (typeof req.body.name === 'string' && req.body.name.trim() === '') || Object.keys(req.body).length > 4))
          {
             logger.error({method: "POST", uri: "/v1/assignments", statusCode: 400, message: "Enter Valid Request Body"});
@@ -76,8 +76,8 @@ const putAssignmentDetails = async (req, res) => {
         !req.body.points || 
         !req.body.num_of_attempts || 
         !req.body.deadline ||
-        (req.body.points && (req.body.points < 1 || typeof req.body.points=== 'string' || req.body.points > 100)) ||
-        (req.body.num_of_attempts && (req.body.num_of_attempts < 1 || typeof req.body.num_of_attempts=== 'string' || req.body.num_of_attempts > 100)) || 
+        (req.body.points && (req.body.points < 1 || typeof req.body.points=== 'string' || req.body.points > 100)) || !Number.isInteger(req.body.points) ||
+        (req.body.num_of_attempts && (req.body.num_of_attempts < 1 || typeof req.body.num_of_attempts=== 'string' || req.body.num_of_attempts > 100)) || !Number.isInteger(req.body.num_of_attempts) ||
         (typeof req.body.name === 'number' || !isNaN(parseFloat(req.body.name)) && isFinite(req.body.name))||
         (typeof req.body.name === 'string' && req.body.name.trim() === '')  ||
         Object.keys(req.body).length > 4) {
@@ -97,7 +97,6 @@ const putAssignmentDetails = async (req, res) => {
             logger.error({method: "PUT", uri: "/v1/assignments/" + req.params.id, statusCode: 404, message:"Assignment Already exists"});
             return res.status(404).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
         }
-
         /*
         const userId = req.user && req.user.id;
         if (!userId) {
@@ -193,7 +192,7 @@ const getAssignmentList = async(req, res) => {
         // Token validation and user attachment should be done in middleware
         const userId = req.user && req.user.id;  // Extract user ID from the token
         if (!userId) {
-            logger.error({method: "GET", uri: "/v1/assignments", statusCode: 401, message: "Unauthorised user" });
+            logger.error({method: "GET", uri: "/v1/assignments", statusCode: 401, message: "Unauthorised user"});
             return res.status(401).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
         }
         const assignments = await db.assignment.findAll();  // This fetches all assignments
@@ -235,7 +234,7 @@ const getAssignmentDetails = async(req, res) => {
     }
 
     try {
-        // Token validation and user attachment should be done in middleware
+        
         const userId = req.user && req.user.id;  // Extract user ID from the token
         if (!userId) {
             logger.error({method: "GET", uri: "/v1/assignments/" + req.params.id, statusCode: 401, message: "Unauthorised user"});
@@ -247,7 +246,7 @@ const getAssignmentDetails = async(req, res) => {
         const assignment = await db.assignment.findByPk(assignId);  
 
         if (!assignment) {
-            logger.error({method: "GET", uri: "/v1/assignments/" + req.params.id, statusCode: 404, message:"Assignment not found"});
+            logger.error({method: "GET", uri: "/v1/assignments/" + req.params.id, statusCode: 404, message: "Assignment not found"});
             return res.status(404).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
         }
         
@@ -264,12 +263,12 @@ const getAssignmentDetails = async(req, res) => {
         logger.info({method: "GET", uri: "/v1/assignments/" + req.params.id, statusCode: 200, message: "The required assignment is displayed successfully!!"});
         return res.status(200).set('Cache-Control', 'no-store, no-cache, must-revalidate').json(result);
     } catch (err) {
-        logger.error({method: "GET", uri: "/v1/assignments/" + req.params.id, statusCode: 500, message: "Server error" + err});
+        logger.error({method: "GET", uri: "/v1/assignments/" + req.params.id, statusCode: 500, message: "Server error" + err });
         return res.status(500).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
     }
 }
     
-    
+  
 
 module.exports = {
     createNewAssignment,
@@ -277,5 +276,4 @@ module.exports = {
     getAssignmentList,
     putAssignmentDetails,
     getAssignmentDetails
-    
 }

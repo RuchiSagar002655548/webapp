@@ -5,6 +5,7 @@ dotenv.config();
 const createUserModel = require('../models/user.model');
 const createAssignmentModel = require('../models/assignment.model');
 
+
 const sequelize = new Sequelize(
     process.env.DATABASE,
     process.env.DBUSER,
