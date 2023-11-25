@@ -1,1 +1,1 @@
-profile = "demo"
+profile = "prod"

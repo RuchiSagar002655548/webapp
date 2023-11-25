@@ -13,6 +13,6 @@ describe("GET /healthz ", () => {
 afterAll(done => {
   // Close the statsdClient socket to clean up the open handle
   helper.statsdClient.close();
-  done(); // Call done to signal Jest that the cleanup is complete
+  done(); // Call done to signal Jest that the cleanup is complete
 });
 

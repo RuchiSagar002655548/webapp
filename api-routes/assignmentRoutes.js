@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 
 var assignment = require('../services/assignments');
+const logger = require('../logger/loggerindex');
 var helper = require('../config/helper');
 
 // Middleware to check for query parameters
@@ -22,13 +23,16 @@ router.put('/:id', helper.pAuthCheck, assignment.putAssignmentDetails);
 
 router.delete('/:id', helper.pAuthCheck, assignment.deleteAssignment);
 
+
 // Add this to return 405 for PATCH requests
 router.patch('/', (req, res) => {
+    logger.error({uri: "/v1/assignments", statusCode: 405, message: "Method Not Allowed"});
     res.status(405).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
 });
 
 // Add this to return 405 for PATCH requests
 router.patch('/:id', (req, res) => {
+    logger.error({uri: "/v1/assignments" + req.params.id, statusCode: 405, message: "Method Not Allowed"});
     res.status(405).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
 });
 
