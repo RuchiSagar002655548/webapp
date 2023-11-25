@@ -7,7 +7,7 @@ on:
       - main
 
 jobs:
-  packer_commands:
+  packer_validate:
     runs-on: ubuntu-latest
     steps:
       - name: Github code checkout
