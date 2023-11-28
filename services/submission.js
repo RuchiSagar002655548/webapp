@@ -16,10 +16,23 @@ const createNewSubmission = async (req, res) => { // Create new Submission funct
     if(!req.body.submission_url || typeof req.body.submission_url !== 'string' ||
         (typeof req.body.submission_url === 'string' && req.body.submission_url.trim() === '') ||
         !/^(http|https):\/\/.*\.zip$/.test(req.body.submission_url) || Object.keys(req.body).length > 1)
+         /*{  
+            const { eMail } = helper.getDecryptedCreds(req.headers.authorization);
+   
+                const failureMessage = {
+                    submission_url: req.body.submission_url,
+                    email: eMail,
+                    status: 'invalid_url'
+                };
+   
+            await sns.publish({
+                Message: JSON.stringify(failureMessage),
+                TopicArn: process.env.SNS_TOPIC_ARN
+            }).promise();*/
  
             logger.error({method: "POST", uri: "/v1/assignments" + req.params.id + "/submission", statusCode: 400, message: "Enter Valid URL and request body"});
             return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
-        
+         
        
  
     try{
@@ -36,7 +49,18 @@ const createNewSubmission = async (req, res) => { // Create new Submission funct
         }
  
         const { eMail, pass } = helper.getDecryptedCreds(req.headers.authorization);
-    
+       
+        const user = await db.user.findOne({ where: { email: eMail, password: pass } });
+        console.log(user.first_name);
+       
+        /*let assignmentObj = await db.assignment.findOne({ where: { assignment_id: req.params.id } });
+       
+ 
+        if (!assignmentObj) {
+            // Handle case where assignment does not exist
+            logger.error({method: "POST", uri: "/v1/assignments" + req.params.id + "/submission", statusCode: 404, message: "Assignment Not found (Incorrect id)"});
+            return res.status(404).set('Cache-Control', 'no-store, no-cache, must-revalidate').send("no");
+        }*/
  
         // Check if the deadline has not passed
         if (new Date(assignmentObj.deadline) < new Date()) {
@@ -84,10 +108,31 @@ const createNewSubmission = async (req, res) => { // Create new Submission funct
         return res.status(201).set('Cache-Control', 'no-store, no-cache, must-revalidate').json(result);
     }
     catch(err) {
+        /*
+        const { eMail } = helper.getDecryptedCreds(req.headers.authorization);
+   
+        if (axios.isAxiosError(err) && err.response) {
+            // Handle axios HTTP errors
+            const failureMessage = {
+                submission_url: req.body.submission_url,
+                email: eMail,
+                status: 'no_file'
+            };
+   
+            await sns.publish({
+                Message: JSON.stringify(failureMessage),
+                TopicArn: process.env.SNS_TOPIC_ARN
+            }).promise();
+   
+            logger.error({ method: "POST", uri: "/v1/assignments" + req.params.id + "/submission", statusCode: err.response.status, message: err.response.data });
+            return res.status(404).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
+        } else {*/
    
             logger.error({method: "POST", uri: "/v1/assignments" + req.params.id + "/submission", statusCode: 500, message: "Server error: " + err.message  });
             return res.status(500).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
-    } }
+        }
+    //}
+}  
  
 module.exports = {
     createNewSubmission
