@@ -1,11 +1,11 @@
 const Sequelize = require("sequelize");
 const dotenv = require('dotenv');
 dotenv.config();
-
+ 
 const createUserModel = require('../models/user.model');
 const createAssignmentModel = require('../models/assignment.model');
-
-
+const createSubmissionModel = require('../models/submission.model');
+ 
 const sequelize = new Sequelize(
     process.env.DATABASE,
     process.env.DBUSER,
@@ -20,13 +20,14 @@ const sequelize = new Sequelize(
          logging: false  
      }
 );
-
+ 
 let db = {};
-
+ 
 db.sequelize = sequelize;
-
-
+ 
+ 
 db.user = createUserModel(sequelize);
 db.assignment = createAssignmentModel(sequelize);
-
+db.submission = createSubmissionModel(sequelize);
+ 
 module.exports = db;
