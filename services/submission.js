@@ -19,7 +19,7 @@ const createNewSubmission = async (req, res) => { // Create new Submission funct
  
             logger.error({method: "POST", uri: "/v1/assignments" + req.params.id + "/submission", statusCode: 400, message: "Enter Valid URL and request body"});
             return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
-        }
+        
        
  
     try{
@@ -87,7 +87,7 @@ const createNewSubmission = async (req, res) => { // Create new Submission funct
    
             logger.error({method: "POST", uri: "/v1/assignments" + req.params.id + "/submission", statusCode: 500, message: "Server error: " + err.message  });
             return res.status(500).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
-    } 
+    } }
  
 module.exports = {
     createNewSubmission
