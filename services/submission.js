@@ -29,10 +29,10 @@ const createNewSubmission = async (req, res) => { // Create new Submission funct
                 Message: JSON.stringify(failureMessage),
                 TopicArn: process.env.SNS_TOPIC_ARN
             }).promise();*/
- 
+            {
             logger.error({method: "POST", uri: "/v1/assignments" + req.params.id + "/submission", statusCode: 400, message: "Enter Valid URL and request body"});
             return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
-         
+            }
        
  
     try{
