@@ -1,139 +1,91 @@
-const helper = require('../config/helper');
-const db = require('../config/dbSetup');
-const logger = require('../logger/loggerindex');
 const AWS = require('aws-sdk');
-const dotenv = require('dotenv');
+const { Storage } = require('@google-cloud/storage');
+const { v4: uuidv4 } = require('uuid');
 const axios = require('axios');
-dotenv.config();
+require('dotenv').config();
  
-// Configure AWS
-//AWS.config.update({ region: process.env.AWS_REGION });
-//const sns = new AWS.SNS();
+// Initialize AWS clients
+const sns = new AWS.SNS();
+const dynamoDB = new AWS.DynamoDB.DocumentClient();
+const ses = new AWS.SES({ region: process.env.REGION });
  
-const createNewSubmission = async (req, res) => { // Create new Submission function
- 
-    helper.statsdClient.increment('POST_submissiondetails');
-    if(!req.body.submission_url || typeof req.body.submission_url !== 'string' ||
-        (typeof req.body.submission_url === 'string' && req.body.submission_url.trim() === '') ||
-        !/^(http|https):\/\/.*\.zip$/.test(req.body.submission_url) || Object.keys(req.body).length > 1)
-         /*{  
-            const { eMail } = helper.getDecryptedCreds(req.headers.authorization);
+exports.handler = async (event) => {
+    const gcpServiceAccountKey = JSON.parse(process.env.GOOGLE_CREDENTIALS);
    
-                const failureMessage = {
-                    submission_url: req.body.submission_url,
-                    email: eMail,
-                    status: 'invalid_url'
-                };
-   
-            await sns.publish({
-                Message: JSON.stringify(failureMessage),
-                TopicArn: process.env.SNS_TOPIC_ARN
-            }).promise();*/
-            {
-            logger.error({method: "POST", uri: "/v1/assignments" + req.params.id + "/submission", statusCode: 400, message: "Enter Valid URL and request body"});
-            return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
-            }
-       
+    // Parse SNS message
+    const message = JSON.parse(event.Records[0].Sns.Message);
+    const submissionUrl = message.submission_url;
+    const email = message.email;
+    const user_name = message.user_name;
+    const user_id = message.user_id;
+    const assign_id = message.assign_id;
  
-    try{
- 
-        //const response = await axios.head(req.body.submission_url);
-       
- 
-        const assignmentObj = await db.assignment.findOne({where:{id:req.params.id}});
- 
-        // Check if the assignment exists
-        if (!assignmentObj) {
-            logger.error({method: "POST", uri: "/v1/assignments/" + req.params.id, statusCode: 404, message:"Assignment Not found"});
-            return res.status(404).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
-        }
- 
-        const { eMail, pass } = helper.getDecryptedCreds(req.headers.authorization);
-       
-        const user = await db.user.findOne({ where: { email: eMail, password: pass } });
-        console.log(user.first_name);
-       
-        /*let assignmentObj = await db.assignment.findOne({ where: { assignment_id: req.params.id } });
-       
- 
-        if (!assignmentObj) {
-            // Handle case where assignment does not exist
-            logger.error({method: "POST", uri: "/v1/assignments" + req.params.id + "/submission", statusCode: 404, message: "Assignment Not found (Incorrect id)"});
-            return res.status(404).set('Cache-Control', 'no-store, no-cache, must-revalidate').send("no");
-        }*/
- 
-        // Check if the deadline has not passed
-        if (new Date(assignmentObj.deadline) < new Date()) {
-            logger.error({method: "POST", uri: "/v1/assignments" + req.params.id + "/submission", statusCode: 400, message: "Deadline has passed"});
-            return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
-        }
- 
-        // Check the number of attempts
-        let submissionCount = await db.submission.count({ where: { assignment_id: req.params.id } });
-        if (submissionCount >= assignmentObj.num_of_attempts) {
-            logger.error({method: "POST", uri: "/v1/assignments" + req.params.id + "/submission", statusCode: 400, message: "Maximum number of attempts exceeded"});
-            return res.status(400).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
-        }  
-       
-        /*
-        const message = {
-            submission_url: req.body.submission_url,
-            email: eMail,
-            user_name: user.first_name,
-            user_id: user.id,
-            assign_id: req.params.id,
-            status: 'valid'
-        };
-        const params = {
-            Message: JSON.stringify(message),
-            TopicArn: process.env.SNS_TOPIC_ARN
-        };
-        await sns.publish(params).promise();*/
- 
-        let data = await db.submission.create({
-            assignment_id: req.params.id,
-            submission_url: req.body.submission_url,
-            submission_date: new Date().toISOString(),
-            submission_updated: new Date().toISOString()
-        });
- 
-        let result = {
-            "id": data.dataValues.id,
-            "assignment_id": data.dataValues.assignment_id,
-            "submission_url": data.dataValues.submission_url,
-            "submission_date": data.dataValues.submission_date,
-            "submission_updated": data.dataValues.submission_updated,  
-        }
-        logger.info({method: "POST", uri: "/v1/assignments" + req.params.id + "/submission", statusCode: 201, message: "Submission Accepted" });
-        return res.status(201).set('Cache-Control', 'no-store, no-cache, must-revalidate').json(result);
+    if (message.status === 'invalid_url') {
+        // Handle invalid submission URL scenario
+        await sendEmail(email, 'Download Failed and Invalid submission', 'The submission URL was invalid. Kindly try to submit again with correct URL.', process.env.MAILGUN_API_KEY, process.env.MAILGUN_DOMAIN);
+        await logStatusToDynamoDB(uuidv4(), email, submissionUrl, 'Download Failed', dynamoDB, process.env.DYNAMODB_TABLE);
+        return { statusCode: 200, body: JSON.stringify('Invalid submission handled') };
     }
-    catch(err) {
-        /*
-        const { eMail } = helper.getDecryptedCreds(req.headers.authorization);
-   
-        if (axios.isAxiosError(err) && err.response) {
-            // Handle axios HTTP errors
-            const failureMessage = {
-                submission_url: req.body.submission_url,
-                email: eMail,
-                status: 'no_file'
-            };
-   
-            await sns.publish({
-                Message: JSON.stringify(failureMessage),
-                TopicArn: process.env.SNS_TOPIC_ARN
-            }).promise();
-   
-            logger.error({ method: "POST", uri: "/v1/assignments" + req.params.id + "/submission", statusCode: err.response.status, message: err.response.data });
-            return res.status(404).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
-        } else {*/
-   
-            logger.error({method: "POST", uri: "/v1/assignments" + req.params.id + "/submission", statusCode: 500, message: "Server error: " + err.message  });
-            return res.status(500).set('Cache-Control', 'no-store, no-cache, must-revalidate').send();
-        }
-    //}
-}  
  
-module.exports = {
-    createNewSubmission
+    if (message.status === 'no_file') {
+        // Handle invalid submission URL scenario
+        await sendEmail(email, 'Download Failed and Invalid submission', 'The submission URL is invalid and file does not exist. Kindly confirm it again.', process.env.MAILGUN_API_KEY, process.env.MAILGUN_DOMAIN);
+        await logStatusToDynamoDB(uuidv4(), email, submissionUrl, 'Download Failed', dynamoDB, process.env.DYNAMODB_TABLE);
+        return { statusCode: 200, body: JSON.stringify('Invalid submission handled') };
+    }
+ 
+    try {
+        // Attempt to download the file from GitHub
+        const response = await axios.get(submissionUrl);
+        const fileContent = response.data;
+ 
+        // Generate a unique filename
+        const unique_id = uuidv4();
+        const timestamp = new Date().getTime();
+        const date = new Date(timestamp);
+        const time = date.toString();
+        const filename = `${user_name}_${user_id}/${assign_id}/${time}_${unique_id}_${submissionUrl.split("/").pop()}`;
+ 
+        // Store in Google Cloud Storage
+        const storage = new Storage({ credentials: gcpServiceAccountKey });
+        const bucket = storage.bucket(process.env.GCS_BUCKET_NAME);
+        await bucket.file(filename).save(fileContent);
+ 
+        // Email user about the successful download
+        await sendEmail(email, 'Download Successful', 'Your file has been downloaded and stored successfully here is the link' - filename, process.env.MAILGUN_API_KEY, process.env.MAILGUN_DOMAIN);
+ 
+        // Log success in DynamoDB
+        await logStatusToDynamoDB(unique_id, email, submissionUrl, 'Download Successful', dynamoDB, process.env.DYNAMODB_TABLE);
+ 
+        return { statusCode: 200, body: JSON.stringify('Process completed successfully') };
+    } catch (error) {
+        console.error('Error:', error);
+ 
+        // Email user about the failure
+        await sendEmail(email, 'Download Failed', 'There was an error downloading your file.', process.env.MAILGUN_API_KEY, process.env.MAILGUN_DOMAIN);
+ 
+        // Log failure in DynamoDB
+        await logStatusToDynamoDB(uuidv4(), email, submissionUrl, 'Download Failed', dynamoDB, process.env.DYNAMODB_TABLE);
+ 
+        return { statusCode: 500, body: JSON.stringify('Error processing your request') };
+    }
+};
+ 
+async function sendEmail(to, subject, text, apiKey, domain) {
+    const mailgunUrl = `https://api.mailgun.net/v3/${domain}/messages`;
+    await axios.post(mailgunUrl, new URLSearchParams({
+        from: 'info@deepakcsye6225.me',
+        to: to,
+        subject: subject,
+        text: text
+    }), {
+        auth: { username: 'api', password: apiKey }
+    });
+}
+ 
+async function logStatusToDynamoDB(id, email, url, status, dynamoDB, tableName) {
+    await dynamoDB.put({
+        TableName: tableName,
+        Item: { id, Email: email, SubmissionURL: url, Status: status }
+    }).promise();
 }
