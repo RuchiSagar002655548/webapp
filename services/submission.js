@@ -89,3 +89,7 @@ async function logStatusToDynamoDB(id, email, url, status, dynamoDB, tableName) 
         Item: { id, Email: email, SubmissionURL: url, Status: status }
     }).promise();
 }
+
+module.exports = {
+    createNewSubmission
+}
