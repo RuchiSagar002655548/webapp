@@ -73,7 +73,7 @@ variable "profile" {
 
 source "amazon-ebs" "my-ami" {
   region          = "${var.aws_region}"
-  ami_name        = "my-debian-ami"
+  ami_name        = "debian-2"
   ami_description = "CSYE6225_ASSIGN5_AMI "
   ami_users       = "${var.ami_users}"
   ami_regions = [
