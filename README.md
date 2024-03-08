@@ -6,7 +6,7 @@ This project outlines the process for deploying a secure web application in both
 
 ### Environments
 
-- **Dev Environment**: Utilizes AWS Certificate Manager for SSL certificates.
+- **Dev Environment**: Utilizes AWS Certificate Manager for SSL certificate.
 - **Demo Environment**: SSL certificates are obtained from zeroSSL, imported into AWS Certificate Manager, and configured with a load balancer.
 
 ## CI/CD Workflow
