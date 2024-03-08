@@ -14,18 +14,18 @@ jobs:
       PORT: 3000
       DBUSER: ${{ secrets.DBUSER }}
       DBPASS: ${{ secrets.DBPASS }}
-      DATABASE: "csye6225"
-      DBPORT: 3306
+      DATABASE: "app_db"
+      DBPORT: 3307
       CSV_PATH: "../users.csv"
 
     services:
       mariadb:
         image: mariadb:10.5
         env:
-          MARIADB_ROOT_PASSWORD: ${{ secrets.DBPASS }}
-          MARIADB_DATABASE: "csye6225"
+          MYSQL_ROOT_PASSWORD: ${{ secrets.DBPASS }}
+          MYSQL_DATABASE: "app_db"
         ports:
-          - 3306:3306 # Corrected the port
+          - 3307:3306 # Corrected the port
         options: >-
           --health-cmd="mysqladmin ping"
           --health-interval 10s
