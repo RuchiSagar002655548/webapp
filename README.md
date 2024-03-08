@@ -13,7 +13,7 @@ This project outlines the process for deploying a secure web application in both
 
 ### GitHub Actions Workflow
 
-Triggered on Pull Request merge, it includes:
+Triggered on Pull Request merge, it include:
 
 - Running unit tests.
 - Validating Packer Template.
